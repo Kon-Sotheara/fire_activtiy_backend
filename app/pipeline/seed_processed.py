@@ -15,7 +15,7 @@ from typing import Any, Iterable
 import pandas as pd
 from psycopg import connect
 
-from app.database import settings
+from app.database import fire_events, get_engine, hotspots, metadata, settings, weekly_grid
 from app.pipeline.seed_hotspots import normalize_row
 
 PROCESSED_DIRECTORY = Path(__file__).resolve().parents[3] / "data" / "processed"
@@ -125,6 +125,9 @@ def main() -> None:
         return
     if not args.replace:
         parser.error("Use --replace to confirm replacing these processed-data tables.")
+
+    # Render starts with an empty database, so create the three application tables first.
+    metadata.create_all(get_engine(), tables=[hotspots, fire_events, weekly_grid])
 
     with connect(database_url()) as connection, connection.cursor() as cursor:
         cursor.execute("alter table fire_events add column if not exists event_id varchar(40)")

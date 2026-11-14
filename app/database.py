@@ -10,6 +10,7 @@ from sqlalchemy.engine import Engine
 
 class Settings(BaseSettings):
     database_url: str | None = None
+    frontend_origin: str = "http://localhost:5173"
 
     model_config = SettingsConfigDict(
         env_file=Path(__file__).resolve().parents[1] / ".env",
@@ -87,4 +88,7 @@ def get_engine() -> Engine:
         raise RuntimeError(
             "DATABASE_URL is not configured. Create backend/.env from backend/.env.example first."
         )
-    return create_engine(settings.database_url, pool_pre_ping=True)
+    database_url = settings.database_url
+    if database_url.startswith("postgresql://"):
+        database_url = database_url.replace("postgresql://", "postgresql+psycopg://", 1)
+    return create_engine(database_url, pool_pre_ping=True)
