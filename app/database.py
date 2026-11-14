@@ -44,6 +44,41 @@ hotspots = Table(
     Column("version", VARCHAR(30)),
 )
 
+# Derived records: one event represents nearby detections on the same day.
+fire_events = Table(
+    "fire_events",
+    metadata,
+    Column("id", BIGINT, primary_key=True, autoincrement=True),
+    Column("event_id", VARCHAR(40)),
+    Column("acq_date", DATE, nullable=False),
+    Column("latitude", FLOAT, nullable=False),
+    Column("longitude", FLOAT, nullable=False),
+    Column("grid_id", VARCHAR(30)),
+    Column("week", DATE),
+    Column("detection_count", INTEGER, nullable=False),
+    Column("modis_detections", INTEGER, nullable=False, default=0),
+    Column("viirs_detections", INTEGER, nullable=False, default=0),
+    Column("source_sensors", VARCHAR(20), nullable=False),
+    Column("fire_type", INTEGER),
+    Column("total_frp", FLOAT),
+    Column("confidence_score", FLOAT),
+    Column("daynight", VARCHAR(5)),
+    Column("sensor_agreement", VARCHAR(20), nullable=False),
+)
+
+weekly_grid = Table(
+    "weekly_grid",
+    metadata,
+    Column("id", BIGINT, primary_key=True, autoincrement=True),
+    Column("week", DATE, nullable=False),
+    Column("grid_id", VARCHAR(30), nullable=False),
+    Column("modis_count", INTEGER, nullable=False, default=0),
+    Column("modis_frp_sum", FLOAT, nullable=False, default=0),
+    Column("viirs_count", INTEGER, nullable=False, default=0),
+    Column("viirs_frp_sum", FLOAT, nullable=False, default=0),
+    Column("unique_fire_events", INTEGER, nullable=False, default=0),
+)
+
 
 @lru_cache
 def get_engine() -> Engine:

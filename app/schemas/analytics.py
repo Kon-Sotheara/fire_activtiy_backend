@@ -54,3 +54,39 @@ class SensorComparison(BaseModel):
     viirs: int = Field(ge=0)
     combined: int = Field(ge=0)
     viirs_to_modis_ratio: float | None
+
+
+class FrpPoint(BaseModel):
+    period: str
+    total_frp: float = Field(ge=0)
+    event_count: int = Field(ge=0)
+
+
+class FrpGridCell(BaseModel):
+    week: str
+    latitude: float
+    longitude: float
+    total_frp: float = Field(ge=0)
+    event_count: int = Field(ge=0)
+
+
+class FireEventRecord(BaseModel):
+    id: str
+    latitude: float
+    longitude: float
+    acq_date: date
+    detection_count: int = Field(ge=1)
+    modis_detections: int = Field(ge=0)
+    viirs_detections: int = Field(ge=0)
+    sensor_agreement: Literal["both", "modis_only", "viirs_only"]
+    total_frp: float | None
+    confidence_score: float | None
+    daynight: Literal["D", "N", "M"] | None
+    fire_type: int | None
+
+
+class FireEventPage(BaseModel):
+    total: int = Field(ge=0)
+    limit: int = Field(ge=1)
+    offset: int = Field(ge=0)
+    items: list[FireEventRecord]
