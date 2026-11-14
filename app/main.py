@@ -9,7 +9,11 @@ from app.database import settings
 
 app = FastAPI(title="Fire Activity API", version="0.1.0")
 
-allowed_origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
+allowed_origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://fire-activity-frontend.vercel.app",
+]
 allowed_origins.extend(origin.strip() for origin in settings.frontend_origin.split(",") if origin.strip())
 
 app.add_middleware(
