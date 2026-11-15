@@ -4,7 +4,7 @@ from functools import lru_cache
 from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from sqlalchemy import BIGINT, DATE, FLOAT, INTEGER, TIME, VARCHAR, Column, DateTime, MetaData, Table, create_engine
+from sqlalchemy import BIGINT, DATE, FLOAT, INTEGER, TIME, VARCHAR, Column, DateTime, MetaData, Table, create_engine, text
 from sqlalchemy.engine import Engine
 
 
@@ -92,3 +92,31 @@ def get_engine() -> Engine:
     if database_url.startswith("postgresql://"):
         database_url = database_url.replace("postgresql://", "postgresql+psycopg://", 1)
     return create_engine(database_url, pool_pre_ping=True)
+
+
+def ensure_analytics_indexes() -> None:
+    """Create the indexes used by the public dashboard, once per database."""
+    # The source data is read-heavy: the explorer repeatedly filters hundreds
+    # of thousands of records by date, sensor, time of observation, and map box.
+    # IF NOT EXISTS makes this safe to run whenever the service starts.
+    statements = (
+        "create index if not exists hotspots_acq_date_idx on hotspots (acq_date)",
+        "create index if not exists hotspots_acq_date_sensor_idx on hotspots (acq_date, sensor)",
+        "create index if not exists hotspots_acq_date_daynight_idx on hotspots (acq_date, daynight)",
+        "create index if not exists hotspots_acq_date_location_idx on hotspots (acq_date, latitude, longitude)",
+        "create index if not exists fire_events_acq_date_idx on fire_events (acq_date)",
+        "create index if not exists fire_events_acq_date_location_idx on fire_events (acq_date, latitude, longitude)",
+        "create index if not exists weekly_grid_week_idx on weekly_grid (week)",
+    )
+    with get_engine().begin() as connection:
+        has_hotspots = connection.scalar(text("select to_regclass('public.hotspots') is not null"))
+        has_events = connection.scalar(text("select to_regclass('public.fire_events') is not null"))
+        has_weekly_grid = connection.scalar(text("select to_regclass('public.weekly_grid') is not null"))
+        for statement in statements:
+            if statement.startswith("create index if not exists hotspots") and not has_hotspots:
+                continue
+            if statement.startswith("create index if not exists fire_events") and not has_events:
+                continue
+            if statement.startswith("create index if not exists weekly_grid") and not has_weekly_grid:
+                continue
+            connection.execute(text(statement))

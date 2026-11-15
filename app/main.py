@@ -5,9 +5,15 @@ from app.api.routes.analytics import router as analytics_router
 from app.api.routes.dashboard import router as dashboard_router
 from app.api.routes.health import router as health_router
 from app.api.routes.predictions import router as predictions_router
-from app.database import settings
+from app.database import ensure_analytics_indexes, settings
 
 app = FastAPI(title="Fire Activity API", version="0.1.0")
+
+
+@app.on_event("startup")
+def prepare_database_for_dashboard() -> None:
+    """Ensure the first deployed dashboard request is not slowed by table scans."""
+    ensure_analytics_indexes()
 
 allowed_origins = [
     "http://localhost:5173",

@@ -15,7 +15,7 @@ from typing import Any, Iterable
 import pandas as pd
 from psycopg import connect
 
-from app.database import fire_events, get_engine, hotspots, metadata, settings, weekly_grid
+from app.database import ensure_analytics_indexes, fire_events, get_engine, hotspots, metadata, settings, weekly_grid
 from app.pipeline.seed_hotspots import normalize_row
 
 PROCESSED_DIRECTORY = Path(__file__).resolve().parents[3] / "data" / "processed"
@@ -160,6 +160,9 @@ def main() -> None:
 
         weekly_columns = ["week", "grid_id", "modis_count", "modis_frp_sum", "viirs_count", "viirs_frp_sum", "unique_fire_events"]
         copy_rows(cursor, f"copy weekly_grid ({', '.join(weekly_columns)}) from stdin", weekly_rows(paths["weekly grid"]), weekly_columns, "weekly grid")
+
+    ensure_analytics_indexes()
+    print("Dashboard indexes: ready")
 
 
 if __name__ == "__main__":
